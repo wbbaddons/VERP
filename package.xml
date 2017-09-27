@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package name="be.bastelstu.verp" xmlns="http://www.woltlab.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.woltlab.com http://www.woltlab.com/XSD/maelstrom/package.xsd">
+	<packageinformation>
+		<packagename>VERP</packagename>
+		<isapplication>0</isapplication>
+		<version>1.0.0 Alpha 1</version>
+		<date>2017-09-27</date>
+	</packageinformation>
+
+	<authorinformation>
+		<author>Tim Düsterhus</author>
+		<authorurl>http://tims.bastelstu.be</authorurl>
+	</authorinformation>
+
+	<requiredpackages>
+		<requiredpackage minversion="3.0.9">com.woltlab.wcf</requiredpackage>
+	</requiredpackages>
+
+	<excludedpackages>
+		<excludedpackage version="3.1.0 Alpha 1">com.woltlab.wcf</excludedpackage>
+	</excludedpackages>
+	
+	<compatibility>
+		<api version="2017" />
+		<api version="2018" />
+	</compatibility>
+
+	<instructions type="install">
+		<instruction type="file" application="wcf">files_wcf.tar</instruction>
+
+		<instruction type="eventListener" />
+
+		<instruction type="option" />
+	</instructions>
+</package>
