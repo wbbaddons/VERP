@@ -1,6 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <data xmlns="http://www.woltlab.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.woltlab.com http://www.woltlab.com/XSD/maelstrom/eventListener.xsd">
 	<import>
+		<eventlistener name="getJobsUser">
+			<eventclassname>wcf\system\email\Email</eventclassname>
+			<eventname>getJobs</eventname>
+			<listenerclassname>wcf\system\event\listener\EmailGetJobsVerpListener</listenerclassname>
+			<environment>user</environment>
+		</eventlistener>
+		<eventlistener name="getJobsAdmin">
+			<eventclassname>wcf\system\email\Email</eventclassname>
+			<eventname>getJobs</eventname>
+			<listenerclassname>wcf\system\event\listener\EmailGetJobsVerpListener</listenerclassname>
+			<environment>admin</environment>
+		</eventlistener>
+	</import>
+
+	<delete>
 		<eventlistener>
 			<eventclassname>wcf\system\email\Email</eventclassname>
 			<eventname>getJobs</eventname>
@@ -13,5 +28,5 @@
 			<listenerclassname>wcf\system\event\listener\EmailGetJobsVerpListener</listenerclassname>
 			<environment>admin</environment>
 		</eventlistener>
-	</import>
+	</delete>
 </data>
