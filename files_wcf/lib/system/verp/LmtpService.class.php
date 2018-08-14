@@ -118,6 +118,7 @@ class LmtpService extends File {
 	public function processUser($userID, $messageFile) {
 		$user = new User($userID);
 		if (!$user->userID) return;
+		if ($user->activationCode) return;
 
 		(new UserAction([ $userID ], 'disable'))->executeAction();
 
