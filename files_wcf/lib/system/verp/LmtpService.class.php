@@ -26,6 +26,7 @@ use \wcf\system\email\mime\PlainTextMimePart;
 use \wcf\system\email\mime\AttachmentMimePart;
 use \wcf\system\io\File;
 use \wcf\system\language\LanguageFactory;
+use \wcf\system\Regex;
 use \wcf\util\CryptoUtil;
 use \wcf\util\FileUtil;
 use \wcf\util\StringUtil;
@@ -56,29 +57,36 @@ class LmtpService extends File {
 		$filename = null;
 		try {
 			$this->send(220, Email::getHost()." WoltLab Suite ready");
-			if (!preg_match("/^LHLO (.+)\r?\n$/", $this->gets(), $matches)) {
+			if (!preg_match("/^LHLO (\S+)\r?\n$/", $this->gets(), $matches)) {
 				throw new \Exception("Expected LHLO", 503);
 			}
 			$this->send(250, "Hello ".$matches[1]);
-			if (!preg_match("/^MAIL FROM:<(.+)>\r?\n$/", $this->gets(), $matches)) {
+			if (!preg_match("/^MAIL FROM:<([^>]*)>\r?\n$/", $this->gets(), $matches)) {
 				throw new \Exception("Expected MAIL FROM", 503);
 			}
 			$this->send(250, "OK");
-			if (!preg_match("/^RCPT TO:<(.+)>\r?\n$/", $this->gets(), $matches)) {
+			if (!preg_match("/^RCPT TO:<([^>]*)>\r?\n$/", $this->gets(), $matches)) {
 				throw new \Exception("Expected RCPT TO", 503);
 			}
 			$rcpt = $matches[1];
 
-			$regex = str_replace('\\$', '(\d+)_([0-9]+)_([0-9a-f]{8})_([0-9a-f]{64})', preg_quote(MAIL_VERP_FORMAT, '/'));
-			if (!preg_match("/".$regex."/", $rcpt, $matches)) {
+			if (MAIL_VERP_EXTRACT_REGEX) {
+				$regex = new Regex(MAIL_VERP_EXTRACT_REGEX);
+			}
+			else {
+				$regex = new Regex(str_replace('\\$', '(?P<userID>\d+)_(?P<timestamp>[0-9]+)_(?P<nonce>[0-9a-f]{8})_(?P<signature>[0-9a-f]{64})', preg_quote(MAIL_VERP_FORMAT)));
+			}
+
+			if (!$regex($rcpt)) {
 				throw new \Exception("Invalid RCPT", 550);
 			}
-			$userID = $matches[1];
-			$timestamp = $matches[2];
-			$nonce = $timestamp."_".$matches[3];
-			$signature = $matches[4];
+			$matches = $regex->getMatches();
+			$userID = $matches['userID'];
+			$timestamp = $matches['timestamp'];
+			$nonce = $timestamp."_".$matches['nonce'];
+			$signature = $matches['signature'];
 
-			if (!CryptoUtil::secureCompare(CryptoUtil::getSignature($userID.'_'.$nonce), $matches[4])) {
+			if (!CryptoUtil::secureCompare(CryptoUtil::getSignature($userID.'_'.$nonce), $signature)) {
 				throw new \Exception("Invalid RCPT", 550);
 			}
 

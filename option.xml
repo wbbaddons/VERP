@@ -7,6 +7,11 @@
 				<optiontype>text</optiontype>
 				<defaultvalue></defaultvalue>
 			</option>
+			<option name="mail_verp_extract_regex">
+				<categoryname>general.mail.send</categoryname>
+				<optiontype>text</optiontype>
+				<defaultvalue></defaultvalue>
+			</option>
 		</options>
 	</import>
 </data>
