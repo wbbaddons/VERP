@@ -42,6 +42,8 @@ void child(char * verp_php, int client_fd)
 
 int main(int argc, char ** argv)
 {
+	setbuf(stdout, NULL);
+
 	if (argc != 4) {
 		fprintf(stderr, "%s <host> <port> <verp.php>\n", argv[0]);
 		return 1;
