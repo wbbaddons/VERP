@@ -74,23 +74,20 @@ class LmtpService extends File {
 				$regex = new Regex(MAIL_VERP_EXTRACT_REGEX);
 			}
 			else {
-				$regex = new Regex(str_replace('\\$', '(?P<userID>\d+)_(?P<timestamp>[0-9]+)_(?P<nonce>[0-9a-f]{8})_(?P<signature>[0-9a-f]{64})', preg_quote(MAIL_VERP_FORMAT)));
+				$regex = new Regex(str_replace('\\$', '(?P<signature>[0-9a-f]{32})_(?P<payload>(?P<userID>\d+)_(?P<email>[0-9a-f]{8})_(?P<timestamp>[0-9]+)_(?P<nonce>[0-9a-f]{8}))', preg_quote(MAIL_VERP_FORMAT)));
 			}
 
 			if (!$regex($rcpt)) {
 				throw new \Exception("Invalid RCPT", 550);
 			}
-			$matches = $regex->getMatches();
-			$userID = $matches['userID'];
-			$timestamp = $matches['timestamp'];
-			$nonce = $timestamp."_".$matches['nonce'];
-			$signature = $matches['signature'];
 
-			if (!CryptoUtil::secureCompare(CryptoUtil::getSignature($userID.'_'.$nonce), $signature)) {
+			$payload = $regex->getMatches();
+
+			if (!CryptoUtil::secureCompare(substr(CryptoUtil::getSignature($payload['payload']), 0, 32), $payload['signature'])) {
 				throw new \Exception("Invalid RCPT", 550);
 			}
 
-			$this->send(250, "OK, userID $userID");
+			$this->send(250, "OK");
 			if (!preg_match("/^DATA\r?\n$/", $this->gets(), $matches)) {
 				throw new \Exception("Expected DATA", 503);
 			}
@@ -102,9 +99,9 @@ class LmtpService extends File {
 			}
 			$file->close();
 
-			$this->processUser($userID, $filename);
+			$this->processUser($payload, $filename);
 
-			$this->send(250, "OK, userID $userID");
+			$this->send(250, "Processed userID ".$payload['userID']);
 			if (!preg_match("/^QUIT\r?\n$/", $this->gets(), $matches)) {
 				throw new \Exception("Expected QUIT", 503);
 			}
@@ -123,12 +120,20 @@ class LmtpService extends File {
 		}
 	}
 
-	public function processUser($userID, $messageFile) {
-		$user = new User($userID);
-		if (!$user->userID) return;
-		if ($user->activationCode) return;
+	public function processUser($payload, $messageFile) {
+		// Expired
+		if ($payload['timestamp'] < TIME_NOW - 86400 * 5) return;
 
-		(new UserAction([ $userID ], 'disable'))->executeAction();
+		$user = new User($payload['userID']);
+
+		// User is deleted
+		if (!$user->userID) return;
+		// User already is disabled
+		if ($user->activationCode) return;
+		// Different email address
+		if (substr(hash('sha256', $user->email), 0, 8) !== $payload['email']) return;
+
+		(new UserAction([ $user ], 'disable'))->executeAction();
 
 		$language = LanguageFactory::getInstance()->getDefaultLanguage();
 		$email = new Email();

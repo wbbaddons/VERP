@@ -39,10 +39,12 @@ class EmailGetJobsVerpListener implements \wcf\system\event\listener\IParameteri
 		if (!($recipient instanceof \wcf\system\email\UserMailbox)) return;
 
 		$userID = $recipient->getUser()->userID;
-		
+		$email = $recipient->getUser()->email;
+
 		try {
-			$nonce = TIME_NOW.'_'.bin2hex(\wcf\util\CryptoUtil::randomBytes(4));
-			$identifier = $userID.'_'.$nonce.'_'.\wcf\util\CryptoUtil::getSignature($userID.'_'.$nonce);
+			$payload = $userID.'_'.substr(hash('sha256', $email), 0, 8).'_'.TIME_NOW.'_'.bin2hex(\wcf\util\CryptoUtil::randomBytes(4));
+			$signature = substr(\wcf\util\CryptoUtil::getSignature($payload), 0, 32);
+			$identifier = $signature.'_'.$payload;
 			
 			$address = str_replace('$', $identifier, MAIL_VERP_FORMAT);
 			$parameters['sender'] = new \wcf\system\email\Mailbox($address);
