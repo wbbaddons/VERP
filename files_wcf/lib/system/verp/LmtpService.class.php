@@ -138,7 +138,7 @@ class LmtpService extends File {
 		$language = LanguageFactory::getInstance()->getDefaultLanguage();
 		$email = new Email();
 		$email->addRecipient(new Mailbox(MAIL_ADMIN_ADDRESS, null, $language));
-		$email->setSubject("Handled bounce for user $userID");
+		$email->setSubject("Handled bounce for user ".$payload['userID']);
 		$email->setBody(new AttachmentMimePart($messageFile, TIME_NOW.".eml", "message/rfc822"));
 		$email->send();
 	}
