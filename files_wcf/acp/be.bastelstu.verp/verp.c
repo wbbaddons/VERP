@@ -16,6 +16,7 @@
  */
 
 #include<errno.h>
+#include<fcntl.h>
 #include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
@@ -25,19 +26,23 @@
 #include<sys/types.h>
 #include<sys/wait.h>
 
+__attribute__((noreturn))
 void child(char * verp_php, int client_fd)
 {
-	printf("File descriptor is %d\n", client_fd);
-	dup2(client_fd, 0);
-	dup2(client_fd, 1);
-	dup2(client_fd, 2);
-	for (int i = 3; i <= client_fd; i++) {
+	int devnull = open("/dev/null", O_RDWR);
+	dup2(devnull, 0);
+	dup2(devnull, 1);
+	dup2(devnull, 2);
+	dup2(client_fd, 3);
+	for (int i = 4; i <= client_fd; i++) {
 		close(i);
 	}
 
 	char * argv[] = { "php", verp_php, (char *) NULL };
 
 	execvp("php", argv);
+	perror("execvp");
+	abort();
 }
 
 int main(int argc, char ** argv)
@@ -130,8 +135,6 @@ int main(int argc, char ** argv)
 					goto fail;
 				case 0:
 					child(argv[3], client_fd);
-					fprintf(stderr, "unreachable\n");
-					abort();
 			}
 			printf("Forked off child %d\n", pid);
 		}
