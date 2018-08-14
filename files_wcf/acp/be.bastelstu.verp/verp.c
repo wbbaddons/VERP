@@ -84,17 +84,17 @@ int main(int argc, char ** argv)
 			}
 
 			if ((sock_fd = socket(socket_type, SOCK_STREAM | SOCK_NONBLOCK, 0)) == -1) {
-				fprintf(stderr, "socket: %s\n", strerror(errno));
+				perror("socket");
 				return 1;
 			}
 
 			if (bind(sock_fd, (struct sockaddr *) &addr, sizeof(addr)) == -1) {
-				fprintf(stderr, "bind: %s\n", strerror(errno));
+				perror("bind");
 				goto fail;
 			}
 
 			if (listen(sock_fd, 5) == -1) {
-				fprintf(stderr, "listen: %s\n", strerror(errno));
+				perror("listen");
 				goto fail;
 			}
 		}
@@ -117,7 +117,7 @@ int main(int argc, char ** argv)
 					sleep(1);
 					continue;
 				}
-				fprintf(stderr, "accept: %s\n", strerror(errno));
+				perror("accept");
 				goto fail;
 			}
 		}
@@ -126,7 +126,7 @@ int main(int argc, char ** argv)
 			pid_t pid;
 			switch (pid = fork()) {
 				case -1:
-					fprintf(stderr, "fork: %s\n", strerror(errno));
+					perror("fork");
 					goto fail;
 				case 0:
 					child(argv[3], client_fd);
