@@ -1,6 +1,6 @@
 <?php
 /*
- * Copyright (c) 2017, Tim Düsterhus
+ * Copyright (c) 2017 - 2018, Tim Düsterhus
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU Affero General Public License as published by
