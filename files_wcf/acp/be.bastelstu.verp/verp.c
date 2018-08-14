@@ -30,7 +30,8 @@ void child(char * verp_php, int client_fd)
 	printf("File descriptor is %d\n", client_fd);
 	dup2(client_fd, 0);
 	dup2(client_fd, 1);
-	for (int i = 2; i <= client_fd; i++) {
+	dup2(client_fd, 2);
+	for (int i = 3; i <= client_fd; i++) {
 		close(i);
 	}
 
