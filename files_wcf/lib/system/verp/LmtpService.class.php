@@ -18,9 +18,16 @@
 
 namespace wcf\system\verp;
 
+use \wcf\data\user\User;
+use \wcf\data\user\UserAction;
 use \wcf\system\email\Email;
+use \wcf\system\email\Mailbox;
+use \wcf\system\email\mime\PlainTextMimePart;
+use \wcf\system\email\mime\AttachmentMimePart;
 use \wcf\system\io\File;
+use \wcf\system\language\LanguageFactory;
 use \wcf\util\CryptoUtil;
+use \wcf\util\FileUtil;
 use \wcf\util\StringUtil;
 
 /**
@@ -46,6 +53,7 @@ class LmtpService extends File {
 	}
 
 	public function handle() {
+		$filename = null;
 		try {
 			$this->send(220, Email::getHost()." WoltLab Suite ready");
 			if (!preg_match("/^LHLO (.+)\r?\n$/", $this->gets(), $matches)) {
@@ -79,10 +87,18 @@ class LmtpService extends File {
 				throw new \Exception("Expected DATA", 503);
 			}
 			$this->send(354, "Carry on");
-			while (!preg_match("/^\.([^.].*)?\r?\n?$/", $this->gets()));
+
+			$file = new File($filename = FileUtil::getTemporaryFilename());
+			while (!preg_match("/^\.([^.].*)?\r?\n?$/", $line = $this->gets())) {
+				$file->write($line);
+			}
+			$file->close();
+
+			$this->processUser($userID, $filename);
+
 			$this->send(250, "OK, userID $userID");
 			if (!preg_match("/^QUIT\r?\n$/", $this->gets(), $matches)) {
-				throw new Exception("Expected QUIT", 503);
+				throw new \Exception("Expected QUIT", 503);
 			}
 		}
 		catch (\Throwable $e) {
@@ -94,5 +110,22 @@ class LmtpService extends File {
 			}
 			throw $e;
 		}
+		finally {
+			if ($filename) @unlink($filename);
+		}
+	}
+
+	public function processUser($userID, $messageFile) {
+		$user = new User($userID);
+		if (!$user->userID) return;
+
+		(new UserAction([ $userID ], 'disable'))->executeAction();
+
+		$language = LanguageFactory::getInstance()->getDefaultLanguage();
+		$email = new Email();
+		$email->addRecipient(new Mailbox(MAIL_ADMIN_ADDRESS, null, $language));
+		$email->setSubject("Handled bounce for user $userID");
+		$email->setBody(new AttachmentMimePart($messageFile, TIME_NOW.".eml", "message/rfc822"));
+		$email->send();
 	}
 }
